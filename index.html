@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play M3U8 Video</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #003366, #000000);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #ffcc00;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6);
+            transition: color 0.3s ease-in-out;
+        }
+
+        h1:hover {
+            color: #ffd700;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 90vw;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+        }
+
+        video {
+            width: 100%;
+            border-radius: 12px;
+            outline: none;
+        }
+
+        /* Quality settings button */
+        .quality-btn {
+            margin-top: 15px;
+            background-color: #ffd700;
+            color: #222;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 1rem;
+            z-index: 10;
+        }
+
+        /* Premium quality menu */
+        .quality-menu {
+            position: absolute;
+            bottom: 70px;  /* Further adjusted bottom position */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px;  /* Further reduced padding */
+            border-radius: 12px;  /* Slightly reduced radius */
+            box-shadow: 0 6px 18px rgba(255, 215, 0, 0.3);
+            z-index: 10;
+            width: 200px;  /* Reduced width for better visibility */
+            display: none;
+            border: 2px solid #ffd700;
+            box-sizing: border-box;
+        }
+
+        .quality-menu div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;  /* Reduced margin */
+        }
+
+        .quality-menu button {
+            background: none;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;  /* Further reduced padding */
+            width: 45%;
+            text-align: center;
+            font-size: 0.9rem;  /* Reduced font size */
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .quality-menu button:hover {
+            background-color: #ffd700;
+            color: #222;
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: #222;
+            color: #fff;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            width: 80%;
+            max-width: 450px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-content h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #ffd700;
+        }
+
+        .modal-content p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+
+        .close-btn, .join-btn {
+            padding: 12px 24px;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .close-btn {
+            background-color: #ff4d4d;
+            color: #fff;
+        }
+
+        .close-btn:hover {
+            background-color: #ff2a2a;
+        }
+
+        .join-btn {
+            background-color: #ffd700;
+            color: #222;
+        }
+
+        .join-btn:hover {
+            background-color: #e6c200;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .quality-menu {
+                width: 70%; /* Responsive for smaller screens */
+                bottom: 60px; /* Adjust bottom position on smaller screens */
+            }
+
+            .quality-menu button {
+                font-size: 0.85rem;  /* Reduce button size on smaller screens */
+                padding: 7px 10px;  /* Adjust padding for smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CRICKET CLIPS PROVIDER</h1>
+
+    <div class="video-container">
+        <video id="video" controls></video>
+
+        <!-- Quality selection menu -->
+        <div class="quality-menu" id="qualityMenu">
+            <div>
+                <button id="quality144p">144p</button>
+                <button id="quality240p">240p</button>
+                <button id="quality360p">360p</button>
+            </div>
+            <div>
+                <button id="quality540p">540p</button>
+                <button id="quality720p">720p</button>
+                <button id="quality1080p">1080p</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality settings button -->
+    <button class="quality-btn" onclick="toggleQualityMenu()">Quality Settings</button>
+
+    <!-- Modal for Telegram Channel Join -->
+    <div id="joinModal" class="modal">
+        <div class="modal-content">
+            <h2>Join Our Telegram Channel!</h2>
+            <p>Stay updated with the latest news and content by joining our official Telegram channel.</p>
+            <button class="join-btn" onclick="window.location.href='https://t.me/cricketclipsprovider'">Join Now</button>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const m3u8Url = urlParams.get('url');
+        
+        const video = document.getElementById('video');
+        const hls = new Hls();
+        const qualityMenu = document.getElementById('qualityMenu');
+        
+        if (m3u8Url && Hls.isSupported()) {
+            hls.loadSource(m3u8Url);
+            hls.attachMedia(video);
+
+            // Dynamically populate the quality buttons
+            hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                const levels = data.levels;
+
+                // Assign each button to the corresponding level
+                document.getElementById('quality144p').onclick = function() {
+                    hls.currentLevel = 0;
+                    toggleQualityMenu();
+                };
+                document.getElementById('quality240p').onclick = function() {
+                    hls.currentLevel = 1;
+                    toggleQualityMenu();
+                };
+                document.getElementById('quality360p').onclick = function() {
+                    hls.currentLevel = 2;
+                    toggleQualityMenu();
+                };
+                document.getElementById('quality540p').onclick = function() {
+                    hls.currentLevel = 3;
+                    toggleQualityMenu();
+                };
+                document.getElementById('quality720p').onclick = function() {
+                    hls.currentLevel = 4;
+                    toggleQualityMenu();
+                };
+                document.getElementById('quality1080p').onclick = function() {
+                    hls.currentLevel = 5;
+                    toggleQualityMenu();
+                };
+            });
+
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = m3u8Url;
+            video.addEventListener('loadedmetadata', function () {
+                video.play();
+            });
+        } else {
+            alert('Your browser does not support HLS playback.');
+        }
+
+        // Toggle the quality menu visibility
+        function toggleQualityMenu() {
+            qualityMenu.style.display = qualityMenu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Close the modal
+        function closeModal() {
+            document.getElementById('joinModal').style.display = 'none';
+        }
+
+        // Display the modal immediately on page load
+        window.onload = function() {
+            document.getElementById('joinModal').style.display = 'flex';
+        };
+    </script>
+
+</body>
+</html>
